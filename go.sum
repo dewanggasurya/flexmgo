@@ -1,7 +1,7 @@
+git.kanosolution.net/kano/dbflex v1.0.12 h1:Q6wE57fC9KJ9hfS82tzDQhp7YRJX3aiMp0snANsqzN4=
+git.kanosolution.net/kano/dbflex v1.0.12/go.mod h1:JwhKlws6r/uBbPE126aJpHbq3x4iugF0ViJlE/fFg/k=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/ariefdarmawan/flexmgo v0.1.15/go.mod h1:ZNVfnly+iMMBJ9sP142Kkt31CeQk+M8LLWYEfF59Qr8=
-github.com/ariefdarmawan/reflector v0.0.0-20210429160254-3690a39ca6e7 h1:Bo3imCZPoGt6SNGPgJ5oICKscpLO+60d2SG9Gv6DnGg=
-github.com/ariefdarmawan/reflector v0.0.0-20210429160254-3690a39ca6e7/go.mod h1:C3eiJ2xw5JT/13i4snLE3F+ToanCZSewAxkCxCepq7o=
 github.com/aws/aws-sdk-go v1.34.28/go.mod h1:H7NKnBqNVzoTJpGfLrQkkD+ytBA93eiDYi/+8rV9s48=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

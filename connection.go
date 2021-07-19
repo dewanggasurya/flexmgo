@@ -36,11 +36,15 @@ func (c *Connection) Connect() error {
 	//opts.SetConnectTimeout(5 * time.Second)
 	//opts.SetSocketTimeout(3 * time.Second)
 	//opts.SetServerSelectionTimeout(3 * time.Second)
+	if c.AuthSource == "" {
+		c.AuthSource = "admin"
+	}
+
 	if c.User != "" {
 		opts.SetAuth(options.Credential{
 			Username:   c.User,
 			Password:   c.Password,
-			AuthSource: "admin",
+			AuthSource: c.AuthSource,
 		})
 	}
 
@@ -77,7 +81,7 @@ func (c *Connection) Connect() error {
 
 	//toolkit.Logger().Debug("client generated: OK")
 	if c.ctx == nil {
-		c.ctx = context.TODO()
+		c.ctx = context.Background()
 	}
 
 	//toolkit.Logger().Debug("context generated: OK")
