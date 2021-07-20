@@ -36,15 +36,12 @@ func (c *Connection) Connect() error {
 	//opts.SetConnectTimeout(5 * time.Second)
 	//opts.SetSocketTimeout(3 * time.Second)
 	//opts.SetServerSelectionTimeout(3 * time.Second)
-	if c.AuthSource == "" {
-		c.AuthSource = "admin"
-	}
 
 	if c.User != "" {
 		opts.SetAuth(options.Credential{
 			Username:   c.User,
 			Password:   c.Password,
-			AuthSource: c.AuthSource,
+			AuthSource: "admin",
 		})
 	}
 
