@@ -188,19 +188,24 @@ func (q *Query) Cursor(m M) df.ICursor {
 		case string:
 			switch cmdValue.(string) {
 			case "aggregate", "pipe":
-				pipes := []toolkit.M{}
+				pipes := []M{}
 				if hasWhere && len(where) > 0 {
 					pipes = append(pipes, M{}.Set("$match", where))
 				}
-				if hasPipe, pipeM := q.Command().HasAttr("pipe"); hasPipe {
+
+				pipeM, hasPipe := m["pipe"]
+				if !hasPipe {
+					hasPipe, pipeM = q.Command().HasAttr("pipe")
+				}
+
+				if hasPipe {
 					var (
-						pipeMs []toolkit.M
-						//ok     bool
-						cur *mongo.Cursor
-						err error
+						pipeMs []M
+						cur    *mongo.Cursor
+						err    error
 					)
 
-					toolkit.Serde(pipeM, &pipeMs, "")
+					Serde(pipeM, &pipeMs, "")
 					if len(pipeMs) > 0 {
 						if _, has := pipeMs[0]["$text"]; has {
 							pipes = pipeMs
@@ -209,7 +214,6 @@ func (q *Query) Cursor(m M) df.ICursor {
 						}
 					}
 
-					//fmt.Println("pipe:", toolkit.JsonString(pipes), "\n")
 					if cur, err = coll.Aggregate(conn.ctx, pipes, new(options.AggregateOptions).SetAllowDiskUse(true)); err != nil {
 						cursor.SetError(err)
 						return cursor
@@ -259,17 +263,17 @@ func (q *Query) Cursor(m M) df.ICursor {
 
 		if items, ok := parts[df.QueryOrder]; ok {
 			sortKeys := items.Value.([]string)
-			sortM := toolkit.M{}
+			sorts := bson.D{}
 			for _, key := range sortKeys {
 				if key[0] == '-' {
-					sortM.Set(key[1:], -1)
+					sorts = append(sorts, bson.E{Key: key[1:], Value: -1})
 				} else {
-					sortM.Set(key, 1)
+					sorts = append(sorts, bson.E{Key: key[1:], Value: 1})
 				}
 			}
 
-			if len(sortM) > 0 {
-				opt.SetSort(sortM)
+			if len(sorts) > 0 {
+				opt.SetSort(sorts)
 			}
 		}
 
@@ -341,7 +345,16 @@ func (q *Query) Execute(m M) (interface{}, error) {
 	case df.QueryUpdate:
 		var err error
 		if hasWhere {
+			update := toolkit.M{}
 			singleupdate := m.Get("singleupdate", false).(bool)
+			updateOperator := m.Get("operator", toolkit.M{}).(toolkit.M)
+
+			if len(updateOperator) > 0 {
+				for k, v := range updateOperator {
+					update.Set(k, v)
+				}
+			}
+
 			//singleupdate := false
 			if !singleupdate {
 				//-- get the field for update
@@ -369,17 +382,18 @@ func (q *Query) Execute(m M) (interface{}, error) {
 					}
 				}
 				//updatedData := toolkit.M{}.Set("$set", dataS)
-
+				update.Set("$set", dataS)
 				err = wrapTx(conn, func(ctx mongo.SessionContext) error {
 					_, err := coll.UpdateMany(ctx, where,
-						toolkit.M{}.Set("$set", dataS),
+						update,
 						new(options.UpdateOptions).SetUpsert(false))
 					return err
 				})
 			} else {
+				update.Set("$set", data)
 				err = wrapTx(conn, func(ctx mongo.SessionContext) error {
 					_, err := coll.UpdateOne(ctx, where,
-						toolkit.M{}.Set("$set", data),
+						update,
 						new(options.UpdateOptions).SetUpsert(false))
 					return err
 				})
