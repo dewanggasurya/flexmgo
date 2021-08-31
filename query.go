@@ -188,9 +188,9 @@ func (q *Query) Cursor(m M) df.ICursor {
 		case string:
 			switch cmdValue.(string) {
 			case "aggregate", "pipe":
-				pipes := []M{}
+				pipes := mongo.Pipeline{}
 				if hasWhere && len(where) > 0 {
-					pipes = append(pipes, M{}.Set("$match", where))
+					pipes = append(pipes, bson.D{{Key: "$match", Value: where}})
 				}
 
 				pipeM, hasPipe := m["pipe"]
@@ -200,18 +200,35 @@ func (q *Query) Cursor(m M) df.ICursor {
 
 				if hasPipe {
 					var (
-						pipeMs []M
+						pipeMs []bson.M
 						cur    *mongo.Cursor
 						err    error
 					)
 
-					Serde(pipeM, &pipeMs, "")
-					if len(pipeMs) > 0 {
-						if _, has := pipeMs[0]["$text"]; has {
-							pipes = pipeMs
-						} else {
-							pipes = append(pipes, pipeMs...)
+					// Serde(pipeM, &pipeMs, "")
+					if v, ok := pipeM.([]bson.M); ok {
+						pipeMs = v
+					} else {
+						pipeBytes, err := bson.Marshal(pipeM)
+						if err != nil {
+							cursor.SetError(err)
+							return cursor
 						}
+
+						err = bson.Unmarshal(pipeBytes, &pipeMs)
+						if err != nil {
+							cursor.SetError(err)
+							return cursor
+						}
+					}
+
+					if len(pipeMs) > 0 {
+						for _, pM := range pipeMs {
+							for pk, p := range pM {
+								pipes = append(pipes, bson.D{{Key: pk, Value: p}})
+							}
+						}
+
 					}
 
 					if cur, err = coll.Aggregate(conn.ctx, pipes, new(options.AggregateOptions).SetAllowDiskUse(true)); err != nil {
@@ -346,6 +363,7 @@ func (q *Query) Execute(m M) (interface{}, error) {
 		var err error
 		if hasWhere {
 			update := toolkit.M{}
+			upsert := m.Get("upsert", false).(bool)
 			singleupdate := m.Get("singleupdate", false).(bool)
 			updateOperator := m.Get("operator", toolkit.M{}).(toolkit.M)
 
@@ -386,7 +404,7 @@ func (q *Query) Execute(m M) (interface{}, error) {
 				err = wrapTx(conn, func(ctx mongo.SessionContext) error {
 					_, err := coll.UpdateMany(ctx, where,
 						update,
-						new(options.UpdateOptions).SetUpsert(false))
+						new(options.UpdateOptions).SetUpsert(upsert))
 					return err
 				})
 			} else {
@@ -394,7 +412,7 @@ func (q *Query) Execute(m M) (interface{}, error) {
 				err = wrapTx(conn, func(ctx mongo.SessionContext) error {
 					_, err := coll.UpdateOne(ctx, where,
 						update,
-						new(options.UpdateOptions).SetUpsert(false))
+						new(options.UpdateOptions).SetUpsert(upsert))
 					return err
 				})
 			}
