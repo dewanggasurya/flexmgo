@@ -364,17 +364,16 @@ func (q *Query) Execute(m M) (interface{}, error) {
 		if hasWhere {
 			update := toolkit.M{}
 			upsert := m.Get("upsert", false).(bool)
-			singleupdate := m.Get("singleupdate", false).(bool)
-			updateOperator := m.Get("operator", toolkit.M{}).(toolkit.M)
 
-			if len(updateOperator) > 0 {
-				for k, v := range updateOperator {
+			updateOperation := m.Get("operation", toolkit.M{}).(toolkit.M)
+			if len(updateOperation) > 0 {
+				for k, v := range updateOperation {
 					update.Set(k, v)
 				}
 			}
 
-			//singleupdate := false
-			if !singleupdate {
+			single := m.Get("single", false).(bool)
+			if !single {
 				//-- get the field for update
 				updateqi, _ := parts[df.QueryUpdate]
 				updatevals := updateqi.Value.([]string)
