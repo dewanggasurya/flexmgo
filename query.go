@@ -373,31 +373,34 @@ func (q *Query) Execute(m M) (interface{}, error) {
 			}
 
 			single := m.Get("single", false).(bool)
-			if !single {
-				//-- get the field for update
-				updateqi, _ := parts[df.QueryUpdate]
-				updatevals := updateqi.Value.([]string)
 
-				var dataM toolkit.M
-				dataM, err = toolkit.ToMTag(data, conn.FieldNameTag())
-				dataS := M{}
-				if err != nil {
-					return nil, err
-				}
+			//-- get the field for update
+			updateqi, _ := parts[df.QueryUpdate]
+			updatevals := updateqi.Value.([]string)
 
-				if len(updatevals) > 0 {
-					for k, v := range dataM {
-						for _, u := range updatevals {
-							if strings.ToLower(k) == strings.ToLower(u) {
-								dataS[k] = v
-							}
+			var dataM toolkit.M
+			dataM, err = toolkit.ToMTag(data, conn.FieldNameTag())
+			dataS := M{}
+			if err != nil {
+				return nil, err
+			}
+
+			if len(updatevals) > 0 {
+				for k, v := range dataM {
+					for _, u := range updatevals {
+						if strings.ToLower(k) == strings.ToLower(u) {
+							dataS[k] = v
 						}
 					}
-				} else {
-					for k, v := range dataM {
-						dataS[k] = v
-					}
 				}
+			} else {
+				for k, v := range dataM {
+					dataS[k] = v
+				}
+			}
+
+			if !single {
+
 				//updatedData := toolkit.M{}.Set("$set", dataS)
 				update.Set("$set", dataS)
 				err = wrapTx(conn, func(ctx mongo.SessionContext) error {
@@ -407,7 +410,7 @@ func (q *Query) Execute(m M) (interface{}, error) {
 					return err
 				})
 			} else {
-				update.Set("$set", data)
+				update.Set("$set", dataS)
 				err = wrapTx(conn, func(ctx mongo.SessionContext) error {
 					_, err := coll.UpdateOne(ctx, where,
 						update,
