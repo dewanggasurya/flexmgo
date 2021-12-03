@@ -37,14 +37,7 @@ func (c *Connection) Connect() error {
 	//opts.SetSocketTimeout(3 * time.Second)
 	//opts.SetServerSelectionTimeout(3 * time.Second)
 
-	if c.User != "" {
-		opts.SetAuth(options.Credential{
-			Username:   c.User,
-			Password:   c.Password,
-			AuthSource: "admin",
-		})
-	}
-
+	authSource := "admin"
 	for k, v := range c.Config {
 		klow := strings.ToLower(k)
 		switch klow {
@@ -67,7 +60,21 @@ func (c *Connection) Connect() error {
 			if idle > 0 {
 				opts.SetMaxConnIdleTime(time.Duration(idle) * time.Second)
 			}
+		case "authsource":
+			if as, ok := v.(string); ok && len(as) > 0 {
+				authSource = as
+			}
+
 		}
+
+	}
+
+	if c.User != "" {
+		opts.SetAuth(options.Credential{
+			Username:   c.User,
+			Password:   c.Password,
+			AuthSource: authSource,
+		})
 	}
 
 	//toolkit.Logger().Debugf("opts: %s", toolkit.JsonString(opts))
